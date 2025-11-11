@@ -18,22 +18,38 @@ const credentials = {
 const SHEET_ID = '1KzSY87VW0gfnK0ZHSTQdJP_WOpllN-1n';
 
 async function getAuth() {
-  const auth = new google.auth.GoogleAuth({
-    credentials: credentials,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  });
-  return auth.getClient();
+  try {
+    const auth = new google.auth.GoogleAuth({
+      credentials: credentials,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    return auth.getClient();
+  } catch (error) {
+    console.error('Auth error:', error);
+    throw error;
+  }
 }
 
 export default async function handler(req, res) {
+  // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  // Handle OPTIONS request
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  // Handle GET request (for testing)
+  if (req.method === 'GET') {
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Backend is working! Use POST to add entries.' 
+    });
+  }
+
+  // Handle POST request
   if (req.method === 'POST') {
     const { action, data } = req.body;
 
@@ -41,15 +57,19 @@ export default async function handler(req, res) {
       const auth = await getAuth();
 
       if (action === 'addEntry') {
+        // Prepare data for Google Sheet
         const values = [[
           data.date,
           data.product,
           data.quantity,
-          data.purchase * data.quantity,
-          data.purchase
+          data.totalPurchase || (data.quantity * data.purchasePrice),
+          data.purchasePrice
         ]];
 
-        await sheets.spreadsheets.values.append({
+        console.log('Adding entry to Sheet:', values);
+
+        // Append to Purchase sheet
+        const result = await sheets.spreadsheets.values.append({
           auth,
           spreadsheetId: SHEET_ID,
           range: 'Purchase!A:E',
@@ -57,13 +77,43 @@ export default async function handler(req, res) {
           resource: { values },
         });
 
-        return res.status(200).json({ success: true, message: 'Entry added' });
+        console.log('Sheet update result:', result.data);
+
+        return res.status(200).json({ 
+          success: true, 
+          message: 'Entry added successfully',
+          updatedCells: result.data.updates?.updatedCells
+        });
+      } 
+      else if (action === 'getData') {
+        // Read data from Purchase sheet
+        const result = await sheets.spreadsheets.values.get({
+          auth,
+          spreadsheetId: SHEET_ID,
+          range: 'Purchase!A:E',
+        });
+
+        return res.status(200).json({ 
+          success: true, 
+          data: result.data.values || [] 
+        });
+      }
+      else {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Unknown action' 
+        });
       }
     } catch (error) {
-      console.error('Error:', error);
-      return res.status(500).json({ success: false, error: error.message });
+      console.error('API Error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Internal server error',
+        details: error.toString()
+      });
     }
   }
 
+  // Handle other methods
   res.status(405).json({ error: 'Method not allowed' });
 }
