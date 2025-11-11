@@ -1,11 +1,7 @@
 {
   "name": "mandavi-foods-backend",
   "version": "1.0.0",
-  "description": "Backend for Mandavi Foods Dashboard",
   "type": "module",
-  "engines": {
-    "node": "22.x"
-  },
   "dependencies": {
     "googleapis": "^118.0.0"
   }
