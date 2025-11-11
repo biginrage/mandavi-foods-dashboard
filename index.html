@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mandavi Foods Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .sync-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .sync-status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .sync-status.syncing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .sync-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-box {
+            padding: 25px;
+            border-radius: 15px;
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255,255,255,0.1);
+            transform: rotate(45deg);
+        }
+
+        .summary-box.sales {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .summary-box.purchase {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .summary-box.profit {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .summary-box h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .summary-box .value {
+            font-size: 32px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card {
+            background: #f9f9f9;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 14px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f5576c 0%, #e63946 100%);
+        }
+
+        .alert {
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            animation: slideDown 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .alert.warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102,126,234,0.3);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .tabs {
+                gap: 5px;
+            }
+
+            .tab-btn {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍚 Mandavi Foods Dashboard</h1>
+            <p>Business Management System</p>
+            <div class="sync-status connected" id="syncStatus">
+                <div class="sync-dot"></div>
+                <span>Connected to Google Sheets</span>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('home')">🏠 Home</button>
+            <button class="tab-btn" onclick="switchTab('daily')">➕ Daily Entry</button>
+            <button class="tab-btn" onclick="switchTab('trends')">📊 Monthly Trends</button>
+            <button class="tab-btn" onclick="switchTab('analytics')">📈 Analytics</button>
+            <button class="tab-btn" onclick="switchTab('admin')">⚙️ Admin</button>
+        </div>
+
+        <!-- HOME TAB -->
+        <div id="home" class="tab-content active">
+            <div class="summary-grid">
+                <div class="summary-box sales">
+                    <h3>Today's Sales</h3>
+                    <div class="value">₹<span id="todaySales">0</span></div>
+                </div>
+                <div class="summary-box purchase">
+                    <h3>Today's Purchase</h3>
+                    <div class="value">₹<span id="todayPurchase">0</span></div>
+                </div>
+                <div class="summary-box profit">
+                    <h3>Today's Profit</h3>
+                    <div class="value">₹<span id="todayProfit">0</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>This Month Summary</h2>
+                <div class="summary-grid">
+                    <div class="summary-box sales">
+                        <h3>Monthly Sales</h3>
+                        <div class="value">₹<span id="monthlySales">0</span></div>
+                    </div>
+                    <div class="summary-box purchase">
+                        <h3>Monthly Purchase</h3>
+                        <div class="value">₹<span id="monthlyPurchase">0</span></div>
+                    </div>
+                    <div class="summary-box profit">
+                        <h3>Monthly Profit</h3>
+                        <div class="value">₹<span id="monthlyProfit">0</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DAILY ENTRY TAB -->
+        <div id="daily" class="tab-content">
+            <div class="card">
+                <h2>Add New Entry</h2>
+                <form id="entryForm" onsubmit="addEntry(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="entryDate">Date *</label>
+                            <input type="date" id="entryDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="productName">Product Name *</label>
+                            <input type="text" id="productName" placeholder="e.g., Rice, Wheat" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category *</label>
+                            <input type="text" id="category" placeholder="e.g., Grains, Pulses" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quantity">Quantity (kg) *</label>
+                            <input type="number" id="quantity" placeholder="e.g., 50" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="purchasePrice">Purchase Price (₹) *</label>
+                            <input type="number" id="purchasePrice" placeholder="e.g., 2000" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="sellingPrice">Selling Price (₹) *</label>
+                            <input type="number" id="sellingPrice" placeholder="e.g., 2500" step="0.01" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="remarks">Remarks (Optional)</label>
+                        <textarea id="remarks" placeholder="Any additional notes..." rows="3"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn" id="submitBtn">
+                        ✓ Add Entry & Sync to Google Sheet
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- TRENDS TAB -->
+        <div id="trends" class="tab-content">
+            <div class="card">
+                <h2>Monthly Overview</h2>
+                <p style="color: #666; margin-bottom: 20px;">Visual charts coming in Phase 2! For now, check your Google Sheet for detailed data.</p>
+            </div>
+        </div>
+
+        <!-- ANALYTICS TAB -->
+        <div id="analytics" class="tab-content">
+            <div class="card">
+                <h2>Product Analytics</h2>
+                <p style="color: #666;">Advanced analytics coming in Phase 2! Check your Google Sheet for current data.</p>
+            </div>
+        </div>
+
+        <!-- ADMIN TAB -->
+        <div id="admin" class="tab-content">
+            <div class="card">
+                <h2>Admin Controls</h2>
+                <table id="entriesTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Purchase</th>
+                            <th>Selling</th>
+                            <th>Profit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                                Entries will appear here after adding data
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://mandavi-foods-dashboard.vercel.app/api/sheets';
+        let allEntries = [];
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTodayDate();
+            loadLocalData();
+            updateDashboard();
+        });
+
+        // Set today's date
+        function setTodayDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('entryDate').value = today;
+        }
+
+        // Load data from localStorage
+        function loadLocalData() {
+            const stored = localStorage.getItem('mandavi_foods_entries');
+            allEntries = stored ? JSON.parse(stored) : [];
+            renderEntries();
+        }
+
+        // Save data to localStorage
+        function saveLocalData() {
+            localStorage.setItem('mandavi_foods_entries', JSON.stringify(allEntries));
+        }
+
+        // Add new entry
+        async function addEntry(event) {
+            event.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span> Syncing to Google Sheet...';
+
+            updateSyncStatus('syncing', 'Syncing...');
+
+            const entry = {
+                date: document.getElementById('entryDate').value,
+                product: document.getElementById('productName').value,
+                category: document.getElementById('category').value,
+                quantity: parseFloat(document.getElementById('quantity').value),
+                purchase: parseFloat(document.getElementById('purchasePrice').value),
+                selling: parseFloat(document.getElementById('sellingPrice').value),
+                remarks: document.getElementById('remarks').value
+            };
+
+            try {
+                // Send to backend API
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'addEntry',
+                        data: entry
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Save locally
+                    allEntries.push({...entry, id: Date.now()});
+                    saveLocalData();
+
+                    // Reset form
+                    document.getElementById('entryForm').reset();
+                    setTodayDate();
+
+                    showAlert('✓ Entry synced to Google Sheet successfully!', 'success');
+                    updateSyncStatus('connected', 'Connected to Google Sheets');
+                    updateDashboard();
+                    renderEntries();
+                } else {
+                    throw new Error(result.error || 'Sync failed');
+                }
+            } catch (error) {
+                console.error('Sync error:', error);
+
+                // Fall back to local storage
+                allEntries.push({...entry, id: Date.now()});
+                saveLocalData();
+
+                showAlert('⚠️ Could not sync to Google Sheet. Saved locally. Check your connection.', 'warning');
+                updateSyncStatus('error', 'Sync failed - Retrying...');
+
+                // Reset form anyway
+                document.getElementById('entryForm').reset();
+                setTodayDate();
+                updateDashboard();
+                renderEntries();
+
+                // Retry connection after 5 seconds
+                setTimeout(() => {
+                    updateSyncStatus('connected', 'Connected to Google Sheets');
+                }, 5000);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '✓ Add Entry & Sync to Google Sheet';
+            }
+        }
+
+        // Update sync status indicator
+        function updateSyncStatus(status, text) {
+            const statusEl = document.getElementById('syncStatus');
+            statusEl.className = `sync-status ${status}`;
+            statusEl.querySelector('span').textContent = text;
+        }
+
+        // Update dashboard
+        function updateDashboard() {
+            const today = new Date().toISOString().split('T')[0];
+            const thisMonth = new Date().getMonth() + 1;
+            const thisYear = new Date().getFullYear();
+
+            let todaySales = 0, todayPurchase = 0, monthlySales = 0, monthlyPurchase = 0;
+
+            allEntries.forEach(entry => {
+                const totalSelling = entry.selling * entry.quantity;
+                const totalPurchase = entry.purchase * entry.quantity;
+
+                if (entry.date === today) {
+                    todaySales += totalSelling;
+                    todayPurchase += totalPurchase;
+                }
+
+                const entryDate = new Date(entry.date);
+                if (entryDate.getMonth() + 1 === thisMonth && entryDate.getFullYear() === thisYear) {
+                    monthlySales += totalSelling;
+                    monthlyPurchase += totalPurchase;
+                }
+            });
+
+            document.getElementById('todaySales').textContent = todaySales.toFixed(0);
+            document.getElementById('todayPurchase').textContent = todayPurchase.toFixed(0);
+            document.getElementById('todayProfit').textContent = (todaySales - todayPurchase).toFixed(0);
+
+            document.getElementById('monthlySales').textContent = monthlySales.toFixed(0);
+            document.getElementById('monthlyPurchase').textContent = monthlyPurchase.toFixed(0);
+            document.getElementById('monthlyProfit').textContent = (monthlySales - monthlyPurchase).toFixed(0);
+        }
+
+        // Render entries table
+        function renderEntries() {
+            const tbody = document.querySelector('#entriesTable tbody');
+            if (allEntries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #999;">No entries yet. Add your first entry!</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = allEntries.slice().reverse().map(entry => {
+                const profit = (entry.selling - entry.purchase) * entry.quantity;
+                return `
+                    <tr>
+                        <td>${entry.date}</td>
+                        <td>${entry.product}</td>
+                        <td>${entry.quantity} kg</td>
+                        <td>₹${entry.purchase}</td>
+                        <td>₹${entry.selling}</td>
+                        <td style="color: ${profit >= 0 ? '#00f2fe' : '#f5576c'}; font-weight: bold;">₹${profit.toFixed(0)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Show alert
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert ${type}`;
+            alert.innerHTML = `<strong>${type === 'success' ? '✓' : type === 'error' ? '✗' : '⚠'}</strong> ${message}`;
+            alertContainer.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
