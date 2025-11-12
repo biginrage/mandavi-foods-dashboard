@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mandavi Foods - Business Dashboard</title>
+    <style>
+        :root {
+            --color-primary: #2d7a88;
+            --color-secondary: #a85230;
+            --color-bg: #fcfcf9;
+            --color-surface: #fffffd;
+            --color-text: #133a3b;
+            --color-border: rgba(94, 82, 64, 0.2);
+            --color-success: #22c55e;
+            --color-error: #c01530;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            padding-bottom: 70px;
+        }
+
+        .header {
+            background: var(--color-surface);
+            border-bottom: 1px solid var(--color-border);
+            padding: 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .sync-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid var(--color-success);
+            border-radius: 8px;
+            font-size: 11px;
+            color: var(--color-success);
+            font-weight: 500;
+        }
+
+        .sync-badge.syncing {
+            background: rgba(230, 129, 97, 0.15);
+            border-color: #e68161;
+            color: #e68161;
+        }
+
+        .sync-badge.error {
+            background: rgba(192, 21, 47, 0.15);
+            border-color: var(--color-error);
+            color: var(--color-error);
+        }
+
+        .sync-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #626c71;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        .stat-currency {
+            color: var(--color-primary);
+        }
+
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 550;
+            margin-bottom: 20px;
+            color: var(--color-text);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 12px;
+            color: var(--color-text);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            font-size: 14px;
+            background: var(--color-bg);
+            color: var(--color-text);
+            font-family: inherit;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(45, 122, 136, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #245d66;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border-left: 4px solid;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: var(--color-success);
+            color: var(--color-success);
+        }
+
+        .alert-error {
+            background: rgba(192, 21, 47, 0.1);
+            border-color: var(--color-error);
+            color: var(--color-error);
+        }
+
+        .alert-warning {
+            background: rgba(230, 129, 97, 0.1);
+            border-color: #e68161;
+            color: #e68161;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--color-surface);
+            border-top: 1px solid var(--color-border);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 16px;
+            cursor: pointer;
+            color: #626c71;
+            font-size: 11px;
+            transition: color 0.2s;
+            border: none;
+            background: none;
+            flex: 1;
+        }
+
+        .nav-item.active {
+            color: var(--color-primary);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        thead {
+            background: rgba(94, 82, 64, 0.12);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        th {
+            font-weight: 550;
+            color: var(--color-text);
+        }
+
+        tbody tr:hover {
+            background: rgba(94, 82, 64, 0.12);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 32px;
+            color: #626c71;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 12px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">🍚 Mandavi Foods</div>
+            <div class="sync-badge" id="syncBadge">
+                <div class="sync-dot"></div>
+                <span>Connected</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- HOME -->
+        <div id="home" class="page active">
+            <h2 class="card-title">Today's Summary</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Today's Purchase</div>
+                    <div class="stat-value stat-currency">₹<span id="todayPurchase">0.00</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Today's Sales</div>
+                    <div class="stat-value stat-currency">₹<span id="todaySales">0.00</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Today's Profit</div>
+                    <div class="stat-value" id="profitValue">₹<span id="todayProfit">0.00</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">This Month Overview</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Monthly Purchase</div>
+                        <div class="stat-value stat-currency">₹<span id="monthlyPurchase">0.00</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Monthly Sales</div>
+                        <div class="stat-value stat-currency">₹<span id="monthlySales">0.00</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Monthly Profit</div>
+                        <div class="stat-value" id="monthlyProfitValue">₹<span id="monthlyProfit">0.00</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Recent Purchases</h3>
+                <div class="table-container">
+                    <table id="recentTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Product</th>
+                                <th>Qty (kg)</th>
+                                <th>Rate (₹/kg)</th>
+                                <th>Amount (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentBody">
+                            <tr><td colspan="5" class="empty-state">No entries yet</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ENTRY -->
+        <div id="entry" class="page">
+            <div class="card">
+                <h2 class="card-title">Add Purchase Entry</h2>
+                <div id="alertBox"></div>
+                <form id="entryForm">
+                    <div class="form-group">
+                        <label class="form-label">Date (DD/MM/YY)</label>
+                        <input type="text" class="form-control" id="entryDate" placeholder="dd/mm/yy" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" class="form-control" id="productName" placeholder="e.g., Rice, Wheat" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Quantity (kg)</label>
+                            <input type="number" class="form-control" id="quantity" step="0.01" placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Rate per kg (₹)</label>
+                            <input type="number" class="form-control" id="ratePerKg" step="0.01" placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Total Amount (₹)</label>
+                            <input type="number" class="form-control" id="totalAmount" step="0.01" placeholder="Auto-calculated" readonly>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="submitBtn">➕ Add to Purchase</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ADMIN -->
+        <div id="admin" class="page">
+            <div class="card">
+                <h2 class="card-title">All Purchases</h2>
+                <div class="table-container">
+                    <table id="allTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Product</th>
+                                <th>Qty (kg)</th>
+                                <th>Rate (₹/kg)</th>
+                                <th>Amount (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allBody">
+                            <tr><td colspan="5" class="empty-state">No entries yet</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <button class="btn btn-primary" onclick="exportCSV()">📥 Export to CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="showPage('home')">
+            <div class="nav-icon">🏠</div>
+            <div>Home</div>
+        </button>
+        <button class="nav-item" onclick="showPage('entry')">
+            <div class="nav-icon">➕</div>
+            <div>Entry</div>
+        </button>
+        <button class="nav-item" onclick="showPage('admin')">
+            <div class="nav-icon">⚙️</div>
+            <div>Admin</div>
+        </button>
+    </nav>
+
+    <script>
+        // **REPLACE WITH YOUR APPS SCRIPT URL IN PART 2**
+        const APPS_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
+        let entries = [];
+
+        function loadData() {
+            const stored = localStorage.getItem("mandaviFoodsEntries");
+            entries = stored ? JSON.parse(stored) : [];
+            updateDashboard();
+        }
+
+        function saveData() {
+            localStorage.setItem("mandaviFoodsEntries", JSON.stringify(entries));
+        }
+
+        function updateSync(status, text) {
+            const badge = document.getElementById("syncBadge");
+            badge.className = "sync-badge";
+            if (status === "syncing") badge.classList.add("syncing");
+            if (status === "error") badge.classList.add("error");
+            badge.innerHTML = `<div class="sync-dot"></div><span>${text}</span>`;
+        }
+
+        function showAlert(msg, type) {
+            const box = document.getElementById("alertBox");
+            box.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+            setTimeout(() => box.innerHTML = "", 4000);
+        }
+
+        function showPage(name) {
+            document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+            document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+            document.getElementById(name).classList.add("active");
+            event.currentTarget.classList.add("active");
+            if (name === "home") updateDashboard();
+        }
+
+        // Auto-calculate total amount
+        document.getElementById("quantity").addEventListener("input", calculateTotal);
+        document.getElementById("ratePerKg").addEventListener("input", calculateTotal);
+
+        function calculateTotal() {
+            const qty = parseFloat(document.getElementById("quantity").value) || 0;
+            const rate = parseFloat(document.getElementById("ratePerKg").value) || 0;
+            document.getElementById("totalAmount").value = (qty * rate).toFixed(2);
+        }
+
+        // Set today's date in DD/MM/YY format
+        function setTodayDate() {
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, "0");
+            const mm = String(today.getMonth() + 1).padStart(2, "0");
+            const yy = String(today.getFullYear()).slice(-2);
+            document.getElementById("entryDate").value = `${dd}/${mm}/${yy}`;
+        }
+
+        // Submit form
+        document.getElementById("entryForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const btn = document.getElementById("submitBtn");
+            btn.disabled = true;
+            btn.textContent = "⏳ Syncing...";
+            updateSync("syncing", "Syncing...");
+
+            const entry = {
+                date: document.getElementById("entryDate").value,
+                product: document.getElementById("productName").value,
+                quantity: document.getElementById("quantity").value,
+                rate: document.getElementById("ratePerKg").value,
+                amount: document.getElementById("totalAmount").value
+            };
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: "POST",
+                    body: JSON.stringify(entry)
+                });
+
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    entries.push(entry);
+                    saveData();
+                    showAlert("✅ Entry added successfully!", "success");
+                    updateSync("connected", "Connected");
+                    updateDashboard();
+                    document.getElementById("entryForm").reset();
+                    setTodayDate();
+                } else {
+                    throw new Error(result.message || "Error adding entry");
+                }
+            } catch (error) {
+                console.error(error);
+                entries.push(entry);
+                saveData();
+                showAlert("⚠️ Saved locally: " + error.message, "warning");
+                updateSync("error", "Sync Failed");
+                updateDashboard();
+                document.getElementById("entryForm").reset();
+                setTodayDate();
+            }
+
+            btn.disabled = false;
+            btn.textContent = "➕ Add to Purchase";
+        });
+
+        function updateDashboard() {
+            const today = new Date().toISOString().split("T")[0];
+            const thisMonth = new Date().getMonth();
+            const thisYear = new Date().getFullYear();
+
+            let todayPurch = 0, todaySales = 0, monthPurch = 0, monthSales = 0;
+
+            entries.forEach(e => {
+                const entryDate = new Date(e.date.split("/").reverse().join("-"));
+                const amount = parseFloat(e.amount);
+
+                if (entryDate.toISOString().split("T")[0] === today) {
+                    todayPurch += amount;
+                }
+                if (entryDate.getMonth() === thisMonth && entryDate.getFullYear() === thisYear) {
+                    monthPurch += amount;
+                }
+            });
+
+            const todayProfit = todaySales - todayPurch;
+            const monthProfit = monthSales - monthPurch;
+
+            document.getElementById("todayPurchase").textContent = todayPurch.toFixed(2);
+            document.getElementById("todaySales").textContent = todaySales.toFixed(2);
+            document.getElementById("todayProfit").textContent = todayProfit.toFixed(2);
+            document.getElementById("profitValue").style.color = todayProfit >= 0 ? "#22c55e" : "#c01530";
+
+            document.getElementById("monthlyPurchase").textContent = monthPurch.toFixed(2);
+            document.getElementById("monthlySales").textContent = monthSales.toFixed(2);
+            document.getElementById("monthlyProfit").textContent = monthProfit.toFixed(2);
+            document.getElementById("monthlyProfitValue").style.color = monthProfit >= 0 ? "#22c55e" : "#c01530";
+
+            const recent = entries.slice(-5).reverse();
+            const recentBody = document.getElementById("recentBody");
+            if (recent.length === 0) {
+                recentBody.innerHTML = "<tr><td colspan='5' class='empty-state'>No entries yet</td></tr>";
+            } else {
+                recentBody.innerHTML = recent.map(e => `<tr><td>${e.date}</td><td>${e.product}</td><td>${e.quantity}</td><td>${e.rate}</td><td>₹${e.amount}</td></tr>`).join("");
+            }
+
+            const allBody = document.getElementById("allBody");
+            if (entries.length === 0) {
+                allBody.innerHTML = "<tr><td colspan='5' class='empty-state'>No entries yet</td></tr>";
+            } else {
+                allBody.innerHTML = entries.map(e => `<tr><td>${e.date}</td><td>${e.product}</td><td>${e.quantity}</td><td>${e.rate}</td><td>₹${e.amount}</td></tr>`).join("");
+            }
+        }
+
+        function exportCSV() {
+            if (entries.length === 0) { alert("No data to export"); return; }
+            const headers = ["Date", "Product", "Quantity (kg)", "Rate per kg", "Total Amount"];
+            const csv = [headers, ...entries.map(e => [e.date, e.product, e.quantity, e.rate, e.amount])].map(r => r.join(",")).join("\n");
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `mandavi_${new Date().toISOString().split("T")[0]}.csv`;
+            a.click();
+        }
+
+        // Initialize
+        setTodayDate();
+        loadData();
+    </script>
+</body>
+</html>
